@@ -1,5 +1,5 @@
-(ns rum
-  (:require-macros rum)
+(ns tonsky.rum
+  (:require-macros tonsky.rum)
   (:require
     [cljsjs.react]
     [sablono.core]))
@@ -11,7 +11,7 @@
     (vswap! last-id inc)))
 
 (defn state [comp]
-  (aget (.-props comp) ":rum/state"))
+  (aget (.-props comp) ":tonsky.rum/state"))
 
 (defn id [comp]
   (::id @(state comp)))
@@ -40,7 +40,7 @@
         did-update     (fns :did-update classes)     ;; state -> state
         will-unmount   (fns :will-unmount classes)   ;; state -> state
         props->state   (fn [props]
-                         (call-all (aget props ":rum/state") init props))
+                         (call-all (aget props ":tonsky.rum/state") init props))
     ]
 
     (js/React.createClass #js {
@@ -52,7 +52,7 @@
                 state (-> { ::react-component this
                             ::id (next-id) }            ;; assign id on mount?
                         (merge (props->state props)))]
-            (aset props ":rum/state" (volatile! state)))))
+            (aset props ":tonsky.rum/state" (volatile! state)))))
       :componentWillMount
       (when-not (empty? will-mount)
         (fn []
@@ -71,20 +71,20 @@
                                  ::id (::id old-state) }
                              (merge (props->state next-props)))
                 next-state (reduce #(%2 old-state %1) next-state transfer-state)]
-            (aset next-props ":rum/state" (volatile! next-state)))))
+            (aset next-props ":tonsky.rum/state" (volatile! next-state)))))
       :shouldComponentUpdate
       (if (empty? should-update)
         (constantly true)
         (fn [next-props _]
           (this-as this
             (let [old-state @(state this)
-                  new-state @(aget next-props ":rum/state")]
+                  new-state @(aget next-props ":tonsky.rum/state")]
               (or (some #(% old-state new-state) should-update) false)))))
       :componentWillUpdate
       (when-not (empty? will-update)
         (fn [next-props _]
           (this-as this
-            (let [new-state (aget next-props ":rum/state")]
+            (let [new-state (aget next-props ":tonsky.rum/state")]
               (vswap! new-state call-all will-update)))))
       :render
       (fn []
@@ -150,7 +150,7 @@
 
 (defn element [class state & [props]]
   (let [props (or props #js {})]
-    (aset props ":rum/state" state)
+    (aset props ":tonsky.rum/state" state)
     (js/React.createElement class props)))
 
 (defn ctor->class [ctor]
@@ -168,17 +168,17 @@
 
 (defn local
   "Adds an atom to component’s state that can be used as local state.
-   Atom is stored under key `:rum/local`.
+   Atom is stored under key `:tonsky.rum/local`.
    Component will be automatically re-rendered if atom’s value changes"
   [initial & [key]]
-  (let [key (or key :rum/local)]
+  (let [key (or key :tonsky.rum/local)]
     { :transfer-state
       (fn [old new]
         (assoc new key (old key)))
       :will-mount
       (fn [state]
         (let [local-state (atom initial)
-              component   (:rum/react-component state)]
+              component   (:tonsky.rum/react-component state)]
           (add-watch local-state key
             (fn [_ _ _ _]
               (request-render component)))
@@ -190,7 +190,7 @@
 (def ^:dynamic *reactions*)
 
 (defn- reactive-key [state]
-  (str ":rum/reactive-" (::id state)))
+  (str ":tonsky.rum/reactive-" (::id state)))
 
 (def reactive {
   :transfer-state
@@ -312,7 +312,7 @@
 })
 
 (defn- cursored-key [state]
-  (str ":rum/cursored-" (::id state)))
+  (str ":tonsky.rum/cursored-" (::id state)))
 
 (def cursored-watch {
   :did-mount

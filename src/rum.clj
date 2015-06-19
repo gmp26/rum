@@ -1,4 +1,4 @@
-(ns rum
+(ns tonsky.rum
   (:require
     [sablono.compiler :as s]))
 
@@ -32,10 +32,10 @@
         render-fn (map compile-body bodies)]
    `(def ~name ~doc
       (let [render-mixin# (~render-ctor (fn ~@render-fn))
-            class#        (rum/build-class (concat [render-mixin#] ~mixins) ~(str name))
+            class#        (tonsky.rum/build-class (concat [render-mixin#] ~mixins) ~(str name))
             ctor#         (fn [& args#]
                             (let [state# (args->state args#)]
-                              (rum/element class# state# nil)))]
+                              (tonsky.rum/element class# state# nil)))]
         (with-meta ctor# {::class class#})))))
 
 (defmacro defc
@@ -51,7 +51,7 @@
   
        (defc name doc-string? [< mixins+]? [params*] render-body+)"
   [& body]
-  (-defc 'rum/render->mixin body))
+  (-defc 'tonsky.rum/render->mixin body))
 
 (defmacro defcs
   "Same as defc, but render will take additional first argument: state
@@ -60,16 +60,16 @@
 
         (defcs name doc-string? [< mixins+]? [state params*] render-body+)"
   [& body]
-  (-defc 'rum/render-state->mixin body))
+  (-defc 'tonsky.rum/render-state->mixin body))
 
 (defmacro with-props
   "Calling function returned by defc will get you component. To specify
    special React properties, create component using with-props:
    
-       (rum/with-props <ctor> <arg1> <arg2> :rum/key <key>)
+       (tonsky.rum/with-props <ctor> <arg1> <arg2> :tonsky.rum/key <key>)
   
    Special properties goes at the end of arguments list and should be namespaced.
-   For now only :rum/key and :rum/ref are supported"
+   For now only :tonsky.rum/key and :tonsky.rum/ref are supported"
   [ctor & args]
   (let [props {::key "key"
                ::ref "ref"}
@@ -77,6 +77,6 @@
         ps (->> (drop-while #(not (props %)) args)
                 (partition 2)
                 (mapcat (fn [[k v]] [(props k) v])))]
-    `(rum/element (ctor->class ~ctor) (args->state [~@as]) (cljs.core/js-obj ~@ps))))
+    `(tonsky.rum/element (ctor->class ~ctor) (args->state [~@as]) (cljs.core/js-obj ~@ps))))
 
 
